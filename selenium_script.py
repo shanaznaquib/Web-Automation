@@ -1,0 +1,97 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.proxy import Proxy, ProxyType
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import pymongo
+import datetime
+import uuid
+import time
+
+
+
+# Twitter credentials
+TWITTER_USERNAME = "ShanazN42621"
+TWITTER_PASSWORD = "AbcdeF_123"
+
+# MongoDB setup
+client = pymongo.MongoClient("mongodb://localhost:27017/")
+db = client["twitter_trends"]
+collection = db["trends"]
+
+# Configure ProxyMesh
+proxy = Proxy()
+proxy.proxy_type = ProxyType.MANUAL
+proxy.http_proxy = "http://Shanaz@18:SHANAZ@18n@us-east.proxymesh.com:31280"
+
+capabilities = webdriver.DesiredCapabilities.CHROME
+proxy.to_capabilities()
+
+# Set up the Chrome driver with ProxyMesh
+options = Options()
+driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+#driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), desired_capabilities=capabilities, options=options)
+
+# Open Twitter and log iner-win64"
+PATH = r"C:\Users\naqui\OneDrive\Desktop\chromedriver-win64\chromedriver.exe"
+driver = webdriver.Chrome(PATH)
+driver.get("https://twitter.com/login")
+
+# Wait for the login page to load
+driver.implicitly_wait(10)
+
+# Enter username
+username_field = driver.find_element(By.NAME, "session[username]")
+username_field.send_keys(TWITTER_USERNAME)
+
+# Enter password
+password_field = driver.find_element(By.NAME, "session[password]")
+password_field.send_keys(TWITTER_PASSWORD)
+
+# Click login button
+login_button = driver.find_element(By.XPATH, "//span[text()='Log in']")
+login_button.click()
+
+# Wait for the home page to load
+time.sleep(5)
+
+# Navigate to the explore page
+driver.get("https://twitter.com/explore")
+
+# Wait for the explore page to load
+time.sleep(5)
+
+# Fetch trending topics
+trends = driver.find_elements(By.XPATH, "//div[@aria-label='Timeline: Trending now']//span")
+top_trends = [trend.text for trend in trends[:5]]
+
+# Get IP address used
+ip_address = driver.execute_script("return window.location.hostname")
+
+# Create unique ID
+unique_id = str(uuid.uuid4())
+
+# Get current date and time
+current_datetime = datetime.datetime.now()
+
+# Insert data into MongoDB
+data = {
+    "unique_id": unique_id,
+    "trend_1": top_trends[0] if len(top_trends) > 0 else None,
+    "trend_2": top_trends[1] if len(top_trends) > 1 else None,
+    "trend_3": top_trends[2] if len(top_trends) > 2 else None,
+    "trend_4": top_trends[3] if len(top_trends) > 3 else None,
+    "trend_5": top_trends[4] if len(top_trends) > 4 else None,
+    "date_time": current_datetime,
+    "ip_address": ip_address
+}
+collection.insert_one(data)
+
+# Close the driver
+driver.quit()
+
+print("Data saved successfully")

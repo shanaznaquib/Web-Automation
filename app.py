@@ -1,0 +1,42 @@
+from flask import Flask, render_template_string, jsonify
+import subprocess
+import pymongo
+
+app = Flask(__name__)
+
+# MongoDB setup
+client = pymongo.MongoClient("mongodb://localhost:27017/")
+db = client["twitter_trends"]
+collection = db["trends"]
+
+@app.route('/')
+def home():
+    return render_template_string('''
+        <!doctype html>
+        <html>
+        <head><title>Twitter Trends</title></head>
+        <body>
+            <button onclick="fetchTrends()">Fetch Trending Topics</button>
+            <div id="results"></div>
+            <script>
+                function fetchTrends() {
+                    fetch('/fetch-trends')
+                        .then(response => response.json())
+                        .then(data => {
+                            document.getElementById('results').innerHTML = JSON.stringify(data, null, 2);
+                        });
+                }
+            </script>
+        </body>
+        </html>
+    ''')
+
+@app.route('/fetch-trends')
+def fetch_trends():
+    subprocess.run(["python", "selenium_script.py"])
+    # Fetch the latest data from MongoDB
+    latest_data = collection.find().sort("date_time", -1).limit(1)[0]
+    return jsonify(latest_data)
+
+if __name__ == '_main_':
+    app.run(debug=True)

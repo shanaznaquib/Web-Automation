@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trending Topics</title>
+    <style>
+        #results {
+            margin-top: 20px;
+        }
+        pre {
+            background-color: #f8f8f8;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+    </style>
+    <script>
+        async function runScript() {
+            const response = await fetch('/run-script');
+            const data = await response.json();
+            document.getElementById('results').innerHTML = `
+                <p>These are the most happening topics as on ${data.datetime}:</p>
+                <ul>
+                    ${data.trends.map((trend, index) => `<li>Name of trend${index + 1}: ${trend}</li>`).join('')}
+                </ul>
+                <p>The IP address used for this query was ${data.ip}.</p>
+                <p>Here’s a JSON extract of this record from the MongoDB:</p>
+                <pre>${JSON.stringify(data.mongoRecord, null, 2)}</pre>
+                <button onclick="runScript()">Click here to run the query again</button>
+            `;
+        }
+    </script>
+</head>
+<body>
+    <button onclick="runScript()">Click here to run the script</button>
+    <div id="results"></div>
+</body>
+</html>
